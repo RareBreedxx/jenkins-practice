@@ -8,23 +8,25 @@ pipeline {
             }
         }
 
-        stage('Run System Check') {
-            steps {
-                sh 'chmod +x system_check.sh'
-                sh './system_check.sh'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t jenkins-system-check .'
             }
         }
 
-        stage('Archive Logs') {
+        stage('Run Container') {
             steps {
-                archiveArtifacts artifacts: 'system_check.log', fingerprint: true
+                sh 'docker run --rm jenkins-system-check'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully 🎉'
+        }
+        failure {
+            echo 'Pipeline failed ❌'
         }
     }
 }
