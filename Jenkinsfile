@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
     stages {
         stage('Build Docker Image') {
             steps {
@@ -22,6 +27,9 @@ pipeline {
     }
 
     post {
+        always {
+            sh 'docker image prune -f'
+        }
         success {
             echo 'Pipeline completed successfully 🎉'
         }
