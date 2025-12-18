@@ -15,13 +15,18 @@ pipeline {
 
         stage('Run Container') {
             steps {
-                sh 'docker run --rm jenkins-system-check'
+		sh '''
+		mkdir - logs
+		docker run --rm \
+		 -v $PWD//logs:/logs \
+		 jenkins-system-check
+               '''
             }
         }
 
         stage('Archive Logs') {
             steps {
-                archiveArtifacts artifacts: 'system_check.log', fingerprint: true
+                archiveArtifacts artifacts: 'log/system_check.log', fingerprint: true
             }
         }
     }

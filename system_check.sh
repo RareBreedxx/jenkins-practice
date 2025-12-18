@@ -1,16 +1,18 @@
 #!/bin/sh
 
-echo "System check started..." | tee system_check.log
-echo "Date:" $(date) | tee -a system_check.log
+LOG_FILE="/logs/system_check.log"
 
-echo "CPU Info:" | tee -a system_check.log
-cat /proc/cpuinfo | head -5 | tee -a system_check.log
+echo "System check started..." | tee "$LOG_FILE"
+date | tee -a "$LOG_FILE"
 
-echo "Memory Usage:" | tee -a system_check.log
-free -h | tee -a system_check.log
+echo "CPU Info:" | tee -a "$LOG_FILE"
+cat /proc/cpuinfo | head -10 | tee -a "$LOG_FILE"
 
-echo "Disk Usage:" | tee -a system_check.log
-df -h | tee -a system_check.log
+echo "Memory Usage:" | tee -a "$LOG_FILE"
+free -h | tee -a "$LOG_FILE"
 
-echo "System check completed successfully." | tee -a system_check.log
+echo "Disk Usage:" | tee -a "$LOG_FILE"
+df -h | tee -a "$LOG_FILE"
+
+echo "System check completed successfully." | tee -a "$LOG_FILE"
 
