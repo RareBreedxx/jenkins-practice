@@ -13,16 +13,6 @@ pipeline {
             }
         }
 
-	stage('Use Jenkins Secret') {
-	   steps {
-		withCredentials([string(credentialsId: 'demo-secret', variable: 'MY_SECRET')]) {
-		  sh '''
-			echo "The secret exists (but the value is hidden)"
-			echo "Secret length: ${#MY_SECRET}"
-		  '''
-	     }
-	}
-
         stage('Run Container') {
             steps {
 		sh '''
@@ -42,6 +32,17 @@ pipeline {
             }
         }
     }
+
+	stage('Use Jenkins Secret') {
+    steps {
+        withCredentials([string(credentialsId: 'demo-secret', variable: 'MY_SECRET')]) {
+            sh '''
+                echo "The secret exists (but value is hidden)"
+                echo "Secret length: ${#MY_SECRET}"
+            '''
+        }
+    }
+}
 
     post {
         always {
