@@ -16,7 +16,9 @@ pipeline {
         stage('Run Container') {
             steps {
 		sh '''
-		mkdir - logs
+		mkdir -p logs
+		chmod 777 logs
+
 		docker run --rm \
 		 -v $PWD//logs:/logs \
 		 jenkins-system-check
