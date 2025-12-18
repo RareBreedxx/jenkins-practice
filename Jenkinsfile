@@ -28,7 +28,7 @@ pipeline {
 
         stage('Archive Logs') {
             steps {
-                archiveArtifacts artifacts: 'log/system_check.log', fingerprint: true
+                archiveArtifacts artifacts: 'logs/system_check.log', fingerprint: true
             }
         }
     }
