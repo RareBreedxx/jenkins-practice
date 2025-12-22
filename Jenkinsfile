@@ -3,22 +3,33 @@ pipeline {
 
     stages {
 
-        stage('Checkout Info') {
-            steps {
-                echo 'Starting Docker build pipeline'
-                sh 'docker --version'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t jenkins-system-check .'
             }
         }
 
-        stage('List Docker Images') {
+        stage('Run Container') {
             steps {
-                sh 'docker images | head -10'
+                sh '''
+                    mkdir -p logs
+                    chmod 777 logs
+                    docker run --rm \
+                      -v "$WORKSPACE/logs:/logs" \
+                      jenkins-system-check
+                '''
+            }
+        }
+
+        stage('Verify Logs') {
+            steps {
+                sh 'ls -l logs'
+            }
+        }
+
+        stage('Archive Logs') {
+            steps {
+                archiveArtifacts artifacts: 'logs/*', fingerprint: true
             }
         }
 
@@ -26,10 +37,13 @@ pipeline {
 
     post {
         success {
-            echo 'Docker build pipeline succeeded ✅'
+            echo 'Container ran successfully and logs archived ✅'
         }
         failure {
-            echo 'Docker build pipeline failed ❌'
+            echo 'Container run failed ❌'
+        }
+        always {
+            sh 'docker image prune -f'
         }
     }
 }
