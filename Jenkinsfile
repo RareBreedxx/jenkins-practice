@@ -1,67 +1,35 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "rarebreedxx/jenkins-system-check:latest"
-    }
-
     stages {
 
-        stage('Build Docker Image') {
+        stage('Hello Jenkins') {
             steps {
-                sh 'docker build -t jenkins-system-check .'
+                echo 'Jenkins is running this pipeline'
             }
         }
 
-        stage('Run Container') {
+        stage('Workspace Check') {
             steps {
-                sh '''
-                    mkdir -p logs
-                    chmod 777 logs
-                    docker run --rm -v "$WORKSPACE/logs:/logs" jenkins-system-check
-                '''
+                sh 'pwd'
+                sh 'ls -la'
             }
         }
 
-        stage('Docker Login') {
+        stage('Simple Shell Command') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    '''
-                }
+                sh 'echo "I understand pipeline structure now"'
             }
         }
 
-        stage('Push Image') {
-            steps {
-                sh '''
-                    docker tag jenkins-system-check $IMAGE_NAME
-                    docker push $IMAGE_NAME
-                '''
-            }
-        }
-
-        stage('Archive Logs') {
-            steps {
-                archiveArtifacts artifacts: 'logs/system_check.log', fingerprint: true
-            }
-        }
     }
 
     post {
-        always {
-            sh 'docker image prune -f'
-        }
         success {
-            echo 'Pipeline succeeded ✅'
+            echo 'Basic pipeline succeeded ✅'
         }
         failure {
-            echo 'Pipeline failed ❌'
+            echo 'Basic pipeline failed ❌'
         }
     }
 }
