@@ -1,9 +1,13 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "rarebreedxx/jenkins-system-check"
+    }
+
     stages {
 
-        stage('Build Docker Image') {
+        stage('Build Image') {
             steps {
                 sh 'docker build -t jenkins-system-check .'
             }
@@ -21,9 +25,27 @@ pipeline {
             }
         }
 
-        stage('Verify Logs') {
+        stage('Docker Login') {
             steps {
-                sh 'ls -l logs'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                          -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh '''
+                    docker tag jenkins-system-check ${IMAGE_NAME}:latest
+                    docker push ${IMAGE_NAME}:latest
+                '''
             }
         }
 
@@ -32,15 +54,14 @@ pipeline {
                 archiveArtifacts artifacts: 'logs/*', fingerprint: true
             }
         }
-
     }
 
     post {
         success {
-            echo 'Container ran successfully and logs archived ✅'
+            echo 'CI/CD pipeline completed successfully 🚀'
         }
         failure {
-            echo 'Container run failed ❌'
+            echo 'Pipeline failed ❌'
         }
         always {
             sh 'docker image prune -f'
