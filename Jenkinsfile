@@ -3,22 +3,22 @@ pipeline {
 
     stages {
 
-        stage('Hello Jenkins') {
+        stage('Checkout Info') {
             steps {
-                echo 'Jenkins is running this pipeline'
+                echo 'Starting Docker build pipeline'
+                sh 'docker --version'
             }
         }
 
-        stage('Workspace Check') {
+        stage('Build Docker Image') {
             steps {
-                sh 'pwd'
-                sh 'ls -la'
+                sh 'docker build -t jenkins-system-check .'
             }
         }
 
-        stage('Simple Shell Command') {
+        stage('List Docker Images') {
             steps {
-                sh 'echo "I understand pipeline structure now"'
+                sh 'docker images | head -10'
             }
         }
 
@@ -26,10 +26,10 @@ pipeline {
 
     post {
         success {
-            echo 'Basic pipeline succeeded ✅'
+            echo 'Docker build pipeline succeeded ✅'
         }
         failure {
-            echo 'Basic pipeline failed ❌'
+            echo 'Docker build pipeline failed ❌'
         }
     }
 }
