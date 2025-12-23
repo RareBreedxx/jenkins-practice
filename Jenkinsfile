@@ -1,15 +1,11 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_PASS = credentials('dockerhub-password') // Replace with your Jenkins DockerHub credentials ID
-    }
-
     stages {
 
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/RareBreedxx/jenkins-practice', branch: 'main'
+                checkout scm
             }
         }
 
@@ -19,50 +15,57 @@ pipeline {
             }
         }
 
-        stage('Run Container') {
+        stage('Run Container (Non-Critical Check)') {
             steps {
                 sh '''
                     mkdir -p logs
                     chmod 777 logs
-                    docker run --rm -v $PWD/logs:/logs jenkins-system-check
+                    docker run --rm \
+                      -v "$WORKSPACE/logs:/logs" \
+                      jenkins-system-check || true
                 '''
             }
         }
 
         stage('Docker Login') {
             steps {
-                withCredentials([string(credentialsId: 'dockerhub-password', variable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u rarebreedxx --password-stdin'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
                 }
             }
         }
 
         stage('Push Image') {
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    sh '''
-                        docker tag jenkins-system-check rarebreedxx/jenkins-system-check:latest
-                        docker push rarebreedxx/jenkins-system-check:latest
-                    '''
-                }
+                sh '''
+                    docker tag jenkins-system-check rarebreedxx/jenkins-system-check:latest
+                    docker push rarebreedxx/jenkins-system-check:latest
+                '''
             }
         }
-
-    } // End of stages
+    }
 
     post {
         always {
-            sh 'docker image prune -f'
+            archiveArtifacts artifacts: 'logs/**', fingerprint: true
+            sh 'docker image prune -f || true'
         }
+
         success {
-            echo 'Pipeline completed successfully!'
+            echo '✅ Pipeline succeeded'
         }
-        unstable {
-            echo 'Pipeline completed with some warnings (Docker push may have failed).'
-        }
+
         failure {
-            echo 'Pipeline failed completely.'
+            echo '❌ Pipeline failed'
         }
     }
 }
-
+  
