@@ -55,7 +55,16 @@ pipeline {
             }
         }
     }
-
+	stage('Non-Critical check') {
+	    steps {
+		catchError(buildResult: 'SUCCESS', StageResult: 'FAILURE') {
+		sh '''
+		   echo "Running a non-critical check..."
+		   exit 1
+		  '''
+	     }
+	}
+    }
     post {
         success {
             echo 'CI/CD pipeline completed successfully 🚀'
