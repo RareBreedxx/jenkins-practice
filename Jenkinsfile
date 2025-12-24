@@ -3,71 +3,36 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Critical Check') {
             steps {
-                checkout scm
+                sh 'echo "Critical check passed"'
             }
         }
 
-        stage('Quality Checks (Parallel)') {
-            parallel {
-
-                stage('Lint Check') {
-                    steps {
-                        timeout(time: 1, unit: 'MINUTES') {
-                            sh 'echo "Running lint check..."'
-                        }
-                    }
-                }
-
-                stage('Unit Tests') {
-                    steps {
-                        retry(2) {
-                            timeout(time: 2, unit: 'MINUTES') {
-                                sh 'echo "Running unit tests..."'
-                            }
-                        }
-                    }
-                }
-
-                stage('Security Scan (Non-Critical)') {
-                    steps {
-                        sh 'echo "Security scan failed but continuing..." || true'
-                    }
+        stage('Non-Critical Check') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    sh 'echo "Simulating failure" && exit 1'
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                retry(2) {
-                    sh 'docker build -t jenkins-system-check .'
-                }
-            }
-        }
-
-        stage('Run Container') {
-            steps {
-                sh 'docker run --rm jenkins-system-check'
+                sh 'echo "Build continues even if non-critical failed"'
             }
         }
     }
 
     post {
         success {
-            echo '✅ Pipeline completed successfully'
+            echo '✅ SUCCESS'
         }
-
         unstable {
-            echo '⚠️ Pipeline unstable but not failed'
+            echo '⚠️ UNSTABLE (non-critical issue)'
         }
-
         failure {
-            echo '❌ Pipeline failed'
-        }
-
-        always {
-            sh 'docker image prune -f || true'
+            echo '❌ FAILURE'
         }
     }
 }
